@@ -1,0 +1,19 @@
+{
+  "name": "card-vault",
+  "private": true,
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  },
+  "scripts": {
+    "dev:collect": "pnpm --filter @card-vault/collect dev",
+    "dev:admin": "pnpm --filter @card-vault/admin dev",
+    "build:collect": "pnpm --filter @card-vault/collect build",
+    "build:admin": "pnpm --filter @card-vault/admin build",
+    "build": "pnpm -r build",
+    "setup-vault": "tsx scripts/setup-vault.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  }
+}
