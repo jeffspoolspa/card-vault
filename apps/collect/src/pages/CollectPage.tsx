@@ -76,6 +76,7 @@ export function CollectPage() {
           customerId={request.customer_id}
           onSuccess={() => navigate('/success')}
           token={token!}
+          preAuthAmount={request.pre_auth_amount ?? undefined}
         />
       </div>
     </div>

@@ -10,10 +10,14 @@ interface Customer {
 export function AddCardPage() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [preAuthDollars, setPreAuthDollars] = useState('');
+
+  const preAuthCents = preAuthDollars ? Math.round(parseFloat(preAuthDollars) * 100) : 0;
 
   function handleSuccess() {
     setSuccess(`Card saved for ${customer?.display_name}`);
     setCustomer(null);
+    setPreAuthDollars('');
   }
 
   return (
@@ -42,10 +46,36 @@ export function AddCardPage() {
             </div>
 
             {customer && (
-              <CardForm
-                customerId={customer.id}
-                onSuccess={handleSuccess}
-              />
+              <>
+                <div className="field">
+                  <label>Pre-authorization amount</label>
+                  <div className="dollar-input-wrapper">
+                    <span className="dollar-prefix">$</span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={preAuthDollars}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^\d.]/g, '');
+                        // Allow only one decimal point and max 2 decimal places
+                        const parts = val.split('.');
+                        if (parts.length > 2) return;
+                        if (parts[1] && parts[1].length > 2) return;
+                        setPreAuthDollars(val);
+                      }}
+                      placeholder="0.00"
+                      className="input dollar-input"
+                    />
+                  </div>
+                  <span className="field-hint">Leave blank to skip card validation</span>
+                </div>
+
+                <CardForm
+                  customerId={customer.id}
+                  onSuccess={handleSuccess}
+                  preAuthAmount={preAuthCents || undefined}
+                />
+              </>
             )}
           </div>
         )}

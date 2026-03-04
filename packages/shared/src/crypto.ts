@@ -124,8 +124,10 @@ export async function rsaDecrypt(
 export interface EncryptionResult {
   card_number_encrypted: string;
   card_exp_encrypted: string;
+  card_cvc_encrypted: string;
   aes_iv_number: string;
   aes_iv_exp: string;
+  aes_iv_cvc: string;
   encrypted_envelope: string;
 }
 
@@ -133,6 +135,7 @@ export async function encryptCardData(
   rsaPublicKeyJwk: JsonWebKey,
   cardNumber: string,
   cardExp: string,
+  cardCvc: string,
 ): Promise<EncryptionResult> {
   const rsaPublicKey = await importRSAPublicKey(rsaPublicKeyJwk);
 
@@ -145,10 +148,12 @@ export async function encryptCardData(
 
   const ivNumber = generateIV();
   const ivExp = generateIV();
+  const ivCvc = generateIV();
 
   // Encrypt card fields with AES
   const encryptedNumber = await aesEncrypt(aesKey, ivNumber, cardNumber);
   const encryptedExp = await aesEncrypt(aesKey, ivExp, cardExp);
+  const encryptedCvc = await aesEncrypt(aesKey, ivCvc, cardCvc);
 
   // Wrap the AES key with RSA public key
   const rawAesKey = await crypto.subtle.exportKey('raw', aesKey);
@@ -157,8 +162,10 @@ export async function encryptCardData(
   return {
     card_number_encrypted: toBase64(encryptedNumber),
     card_exp_encrypted: toBase64(encryptedExp),
+    card_cvc_encrypted: toBase64(encryptedCvc),
     aes_iv_number: toBase64(ivNumber.buffer as ArrayBuffer),
     aes_iv_exp: toBase64(ivExp.buffer as ArrayBuffer),
+    aes_iv_cvc: toBase64(ivCvc.buffer as ArrayBuffer),
     encrypted_envelope: toBase64(encryptedEnvelope),
   };
 }
@@ -172,7 +179,9 @@ export async function decryptCardDataWithEnvelope(
   cardExpEncrypted: string,
   ivNumber: string,
   ivExp: string,
-): Promise<{ cardNumber: string; cardExp: string }> {
+  cardCvcEncrypted?: string,
+  ivCvc?: string,
+): Promise<{ cardNumber: string; cardExp: string; cardCvc?: string }> {
   // Unwrap the AES key from the RSA envelope
   const rawAesKey = await rsaDecrypt(rsaPrivateKey, fromBase64(encryptedEnvelope));
 
@@ -187,7 +196,12 @@ export async function decryptCardDataWithEnvelope(
   const cardNumber = await aesDecrypt(aesKey, fromBase64(ivNumber), fromBase64(cardNumberEncrypted));
   const cardExp = await aesDecrypt(aesKey, fromBase64(ivExp), fromBase64(cardExpEncrypted));
 
-  return { cardNumber, cardExp };
+  let cardCvc: string | undefined;
+  if (cardCvcEncrypted && ivCvc) {
+    cardCvc = await aesDecrypt(aesKey, fromBase64(ivCvc), fromBase64(cardCvcEncrypted));
+  }
+
+  return { cardNumber, cardExp, cardCvc };
 }
 
 // --- Admin Flow: Decrypt via PBKDF2 (re-encrypted at-rest) ---
@@ -199,11 +213,19 @@ export async function decryptCardDataWithPassword(
   cardExpEncrypted: string,
   ivNumber: string,
   ivExp: string,
-): Promise<{ cardNumber: string; cardExp: string }> {
+  cardCvcEncrypted?: string,
+  ivCvc?: string,
+): Promise<{ cardNumber: string; cardExp: string; cardCvc?: string }> {
   const aesKey = await deriveKeyFromPassword(password, fromBase64(salt));
   const cardNumber = await aesDecrypt(aesKey, fromBase64(ivNumber), fromBase64(cardNumberEncrypted));
   const cardExp = await aesDecrypt(aesKey, fromBase64(ivExp), fromBase64(cardExpEncrypted));
-  return { cardNumber, cardExp };
+
+  let cardCvc: string | undefined;
+  if (cardCvcEncrypted && ivCvc) {
+    cardCvc = await aesDecrypt(aesKey, fromBase64(ivCvc), fromBase64(cardCvcEncrypted));
+  }
+
+  return { cardNumber, cardExp, cardCvc };
 }
 
 // --- Re-encryption: RSA envelope → PBKDF2 at-rest ---
@@ -211,8 +233,10 @@ export async function decryptCardDataWithPassword(
 export interface ReEncryptionResult {
   card_number_encrypted: string;
   card_exp_encrypted: string;
+  card_cvc_encrypted?: string;
   aes_iv_number: string;
   aes_iv_exp: string;
+  aes_iv_cvc?: string;
   aes_salt: string;
 }
 
@@ -220,6 +244,7 @@ export async function reEncryptForStorage(
   password: string,
   cardNumber: string,
   cardExp: string,
+  cardCvc?: string,
 ): Promise<ReEncryptionResult> {
   const salt = generateSalt();
   const ivNumber = generateIV();
@@ -229,13 +254,22 @@ export async function reEncryptForStorage(
   const encryptedNumber = await aesEncrypt(aesKey, ivNumber, cardNumber);
   const encryptedExp = await aesEncrypt(aesKey, ivExp, cardExp);
 
-  return {
+  const result: ReEncryptionResult = {
     card_number_encrypted: toBase64(encryptedNumber),
     card_exp_encrypted: toBase64(encryptedExp),
     aes_iv_number: toBase64(ivNumber.buffer as ArrayBuffer),
     aes_iv_exp: toBase64(ivExp.buffer as ArrayBuffer),
     aes_salt: toBase64(salt.buffer as ArrayBuffer),
   };
+
+  if (cardCvc) {
+    const ivCvc = generateIV();
+    const encryptedCvc = await aesEncrypt(aesKey, ivCvc, cardCvc);
+    result.card_cvc_encrypted = toBase64(encryptedCvc);
+    result.aes_iv_cvc = toBase64(ivCvc.buffer as ArrayBuffer);
+  }
+
+  return result;
 }
 
 // --- Vault Config: Decrypt RSA private key with master password ---
