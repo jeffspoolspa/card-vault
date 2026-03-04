@@ -8,7 +8,7 @@ export function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/expired" replace />} />
+        <Route path="/" element={<Navigate to="/add-card" replace />} />
         <Route path="/collect" element={<CollectPage />} />
         <Route path="/add-card" element={<AddCardPage />} />
         <Route path="/expired" element={<ExpiredPage />} />
