@@ -415,4 +415,22 @@ body.embed-mode {
     padding: 0;
     align-items: flex-start;
   }
+
+  /* Move card brand icons above the input on narrow screens */
+  .input-group-row:first-child {
+    flex-wrap: wrap;
+  }
+
+  .brand-icons {
+    order: -1;
+    width: 100%;
+    justify-content: flex-end;
+    padding: 0.5rem 0.75rem 0;
+    gap: 4px;
+  }
+
+  .brand-icons svg {
+    width: 20px;
+    height: 14px;
+  }
 }
