@@ -394,7 +394,7 @@ body.embed-mode {
 }
 
 .embed-mode .card-form {
-  max-width: 100%;
+  max-width: 420px;
 }
 
 .embed-mode .submit-btn {
@@ -416,21 +416,28 @@ body.embed-mode {
     align-items: flex-start;
   }
 
-  /* Move card brand icons above the input on narrow screens */
-  .input-group-row:first-child {
-    flex-wrap: wrap;
+  /* Position card brand icons above the input group on narrow screens */
+  .field:has(.input-group) {
+    position: relative;
   }
 
   .brand-icons {
-    order: -1;
-    width: 100%;
-    justify-content: flex-end;
-    padding: 0.5rem 0.75rem 0;
-    gap: 4px;
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0;
+    gap: 3px;
   }
 
   .brand-icons svg {
-    width: 20px;
-    height: 14px;
+    width: 18px;
+    height: 12px;
+  }
+
+  /* Remove icons from inside the input row so they don't take space */
+  .input-group-row .brand-icons {
+    position: absolute;
+    top: -20px;
+    right: 0;
   }
 }
