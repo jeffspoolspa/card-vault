@@ -395,6 +395,7 @@ body.embed-mode {
 
 .embed-mode .card-form {
   max-width: 420px;
+  margin: 0 auto;
 }
 
 .embed-mode .submit-btn {
@@ -416,28 +417,14 @@ body.embed-mode {
     align-items: flex-start;
   }
 
-  /* Position card brand icons above the input group on narrow screens */
-  .field:has(.input-group) {
-    position: relative;
-  }
-
+  /* Scale down brand icons on mobile so they fit without overlapping */
   .brand-icons {
-    position: absolute;
-    top: 0;
-    right: 0;
-    padding: 0;
-    gap: 3px;
+    gap: 2px;
+    padding-right: 0.5rem;
   }
 
   .brand-icons svg {
     width: 18px;
     height: 12px;
-  }
-
-  /* Remove icons from inside the input row so they don't take space */
-  .input-group-row .brand-icons {
-    position: absolute;
-    top: -20px;
-    right: 0;
   }
 }
