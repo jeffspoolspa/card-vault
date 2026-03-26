@@ -27,7 +27,7 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
   padding: 2rem;
   width: 100%;
-  max-width: 420px;
+  max-width: 380px;
 }
 
 .card-wrapper.centered {
@@ -394,7 +394,7 @@ body.embed-mode {
 }
 
 .embed-mode .card-form {
-  max-width: 360px;
+  max-width: 420px;
   margin: 0 auto;
 }
 
