@@ -12,9 +12,31 @@ export function CollectPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get('token');
+  const isEmbed = searchParams.get('embed') === 'true' || window.parent !== window;
 
   const [loading, setLoading] = useState(true);
   const [request, setRequest] = useState<RequestWithCustomer | null>(null);
+
+  // Apply embed mode styling and height reporting
+  useEffect(() => {
+    if (isEmbed) {
+      document.body.classList.add('embed-mode');
+
+      // Report height to parent for auto-resize iframe
+      const reportHeight = () => {
+        const height = document.documentElement.scrollHeight;
+        window.parent.postMessage({ type: 'card-vault-resize', height }, '*');
+      };
+      const observer = new ResizeObserver(reportHeight);
+      observer.observe(document.body);
+      reportHeight();
+
+      return () => {
+        observer.disconnect();
+        document.body.classList.remove('embed-mode');
+      };
+    }
+  }, [isEmbed]);
 
   useEffect(() => {
     if (!token) {
@@ -74,7 +96,14 @@ export function CollectPage() {
 
         <CardForm
           customerId={request.customer_id}
-          onSuccess={() => navigate('/success')}
+          onSuccess={() => {
+            if (isEmbed) {
+              // Notify parent window (onboarding form) that card is saved
+              window.parent.postMessage({ type: 'card-vault-success' }, '*');
+            } else {
+              navigate('/success');
+            }
+          }}
           token={token!}
           preAuthAmount={request.pre_auth_amount ?? undefined}
         />

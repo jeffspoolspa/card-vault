@@ -368,6 +368,39 @@ body {
   color: #697386;
 }
 
+/* Embed mode — seamless iframe integration, looks native in parent */
+
+body.embed-mode {
+  background: transparent;
+  overflow: hidden;
+}
+
+.embed-mode .page-container {
+  min-height: auto;
+  padding: 0;
+  display: block;
+}
+
+.embed-mode .card-wrapper {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  max-width: 100%;
+}
+
+.embed-mode .header {
+  display: none;
+}
+
+.embed-mode .card-form {
+  max-width: 100%;
+}
+
+.embed-mode .submit-btn {
+  width: 100%;
+}
+
 /* Responsive */
 
 @media (max-width: 480px) {
