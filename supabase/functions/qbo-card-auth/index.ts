@@ -116,6 +116,7 @@ Deno.serve(async (req: Request) => {
       cardholder_name,
       zip,
       pre_auth_amount,
+      charge_now,
     } = await req.json();
 
     // Validate required fields (pre_auth_amount is optional)
@@ -233,11 +234,13 @@ Deno.serve(async (req: Request) => {
       console.error("Failed to update customer notes:", noteErr);
     }
 
-    // Step 3: Pre-authorize (optional — only if pre_auth_amount provided)
+    // Step 3: Charge or pre-authorize (optional — only if pre_auth_amount provided)
     let qboChargeId: string | undefined;
+    const shouldCapture = !!charge_now;
 
     if (pre_auth_amount && pre_auth_amount > 0) {
       const amountDollars = (pre_auth_amount / 100).toFixed(2);
+      const actionLabel = shouldCapture ? "Charge" : "Pre-auth";
 
       const chargeResp = await fetch(`${QBO_BASE_URL}/quickbooks/v4/payments/charges`, {
         method: "POST",
@@ -245,7 +248,7 @@ Deno.serve(async (req: Request) => {
         body: JSON.stringify({
           amount: amountDollars,
           currency: "USD",
-          capture: false,
+          capture: shouldCapture,
           cardOnFile: qboCardId,
           context: {
             mobile: false,
@@ -256,10 +259,10 @@ Deno.serve(async (req: Request) => {
 
       const chargeText = await chargeResp.text();
       if (!chargeResp.ok) {
-        console.error("Pre-auth failed:", chargeResp.status, chargeText);
+        console.error(`${actionLabel} failed:`, chargeResp.status, chargeText);
         const parsed = JSON.parse(chargeText).errors?.[0];
         return jsonResponse(
-          { success: false, error: parsed?.message || `Pre-auth failed: ${chargeResp.status}` },
+          { success: false, error: parsed?.message || `${actionLabel} failed: ${chargeResp.status}` },
         );
       }
 
@@ -267,7 +270,7 @@ Deno.serve(async (req: Request) => {
       qboChargeId = chargeData.id;
       if (!qboChargeId) {
         return jsonResponse(
-          { success: false, error: "Card saved but pre-authorization failed" },
+          { success: false, error: `Card saved but ${actionLabel.toLowerCase()} failed` },
         );
       }
     }

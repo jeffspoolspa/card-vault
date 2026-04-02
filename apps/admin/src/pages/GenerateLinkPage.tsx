@@ -17,6 +17,9 @@ export function GenerateLinkPage() {
   const [selected, setSelected] = useState<Customer | null>(null);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [pendingLinks, setPendingLinks] = useState<CardCollectionRequestRow[]>([]);
+  const [preAuthAmount, setPreAuthAmount] = useState('');
+  const [chargeNow, setChargeNow] = useState(false);
+  const [memo, setMemo] = useState('');
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -68,11 +71,16 @@ export function GenerateLinkPage() {
     crypto.getRandomValues(bytes);
     const token = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 
+    const amountCents = preAuthAmount ? Math.round(parseFloat(preAuthAmount) * 100) : null;
+
     const { error } = await supabase.from('card_collection_requests').insert({
       customer_id: selected.id,
       token,
       expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
       created_by: user.id,
+      pre_auth_amount: amountCents || null,
+      charge_now: chargeNow,
+      memo: memo.trim() || null,
     });
 
     if (!error) {
@@ -146,9 +154,53 @@ export function GenerateLinkPage() {
         </div>
 
         {selected && (
-          <button onClick={handleGenerate} disabled={generating} className="btn btn-primary">
-            {generating ? 'Generating...' : 'Generate Link'}
-          </button>
+          <>
+            <div className="field">
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={chargeNow}
+                  onChange={(e) => setChargeNow(e.target.checked)}
+                />
+                <span>Charge card (not just pre-authorization)</span>
+              </label>
+            </div>
+
+            <div className="field">
+              <label>{chargeNow ? 'Charge amount' : 'Pre-auth amount'} (optional)</label>
+              <div className="dollar-input-wrapper">
+                <span className="dollar-prefix">$</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={preAuthAmount}
+                  onChange={(e) => setPreAuthAmount(e.target.value.replace(/[^0-9.]/g, ''))}
+                  placeholder="0.00"
+                  className="input dollar-input"
+                />
+              </div>
+              <span className="field-hint">
+                {chargeNow
+                  ? 'This amount will be charged to the card immediately after saving.'
+                  : 'A temporary hold to verify the card. Released automatically.'}
+              </span>
+            </div>
+
+            <div className="field">
+              <label>Memo (optional)</label>
+              <textarea
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+                placeholder="Note displayed to the customer on the card form..."
+                className="input"
+                rows={2}
+              />
+            </div>
+
+            <button onClick={handleGenerate} disabled={generating} className="btn btn-primary">
+              {generating ? 'Generating...' : 'Generate Link'}
+            </button>
+          </>
         )}
 
         {generatedLink && (

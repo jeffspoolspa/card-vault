@@ -18,6 +18,7 @@ interface CardFormProps {
   onSuccess: () => void;
   token?: string;
   preAuthAmount?: number; // cents
+  chargeNow?: boolean;
 }
 
 function CardBrandIcons({ detected }: { detected: string | null }) {
@@ -73,7 +74,7 @@ function friendlyCardError(raw: string): string {
   return 'Card could not be processed. Please check your details and try again.';
 }
 
-export function CardForm({ customerId, onSuccess, token, preAuthAmount }: CardFormProps) {
+export function CardForm({ customerId, onSuccess, token, preAuthAmount, chargeNow }: CardFormProps) {
   const [cardNumber, setCardNumber] = useState('');
   const [expiration, setExpiration] = useState('');
   const [cvc, setCvc] = useState('');
@@ -134,6 +135,7 @@ export function CardForm({ customerId, onSuccess, token, preAuthAmount }: CardFo
           cardholder_name: cardholderName.trim(),
           zip: zip.trim(),
           pre_auth_amount: preAuthAmount || undefined,
+          charge_now: chargeNow || false,
         },
       });
 
@@ -146,7 +148,9 @@ export function CardForm({ customerId, onSuccess, token, preAuthAmount }: CardFo
 
       const qboCardId = result.qboCardId;
       const qboChargeId = result.qboChargeId;
-      const preAuthStatus: 'authorized' | 'skipped' = qboChargeId ? 'authorized' : 'skipped';
+      const preAuthStatus: 'charged' | 'authorized' | 'skipped' = qboChargeId
+        ? (chargeNow ? 'charged' : 'authorized')
+        : 'skipped';
 
       // Encrypt card data
       setStatusMessage('Encrypting card data...');
@@ -282,7 +286,11 @@ export function CardForm({ customerId, onSuccess, token, preAuthAmount }: CardFo
       )}
 
       <button type="submit" disabled={submitting} className="submit-btn">
-        {submitting ? (statusMessage || 'Processing...') : 'Save card'}
+        {submitting
+          ? (statusMessage || 'Processing...')
+          : chargeNow && preAuthAmount
+            ? `Pay $${(preAuthAmount / 100).toFixed(2)}`
+            : 'Save card'}
       </button>
     </form>
   );

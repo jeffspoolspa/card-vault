@@ -94,11 +94,21 @@ export function CollectPage() {
           )}
         </div>
 
+        {(request.memo || request.pre_auth_amount) && (
+          <div className="collection-info">
+            {request.memo && <p className="collection-memo">{request.memo}</p>}
+            {request.pre_auth_amount && (
+              <p className="collection-amount">
+                {request.charge_now ? 'Amount due' : 'Pre-authorization'}: <strong>${(request.pre_auth_amount / 100).toFixed(2)}</strong>
+              </p>
+            )}
+          </div>
+        )}
+
         <CardForm
           customerId={request.customer_id}
           onSuccess={() => {
             if (isEmbed) {
-              // Notify parent window (onboarding form) that card is saved
               window.parent.postMessage({ type: 'card-vault-success' }, '*');
             } else {
               navigate('/success');
@@ -106,6 +116,7 @@ export function CollectPage() {
           }}
           token={token!}
           preAuthAmount={request.pre_auth_amount ?? undefined}
+          chargeNow={request.charge_now}
         />
       </div>
     </div>

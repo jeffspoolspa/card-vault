@@ -39,6 +39,8 @@ export interface CardCollectionRequestRow {
   expires_at: string;
   completed_at: string | null;
   pre_auth_amount: number | null;
+  memo: string | null;
+  charge_now: boolean;
 }
 
 export interface VaultConfigRow {
